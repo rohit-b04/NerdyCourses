@@ -1,7 +1,0 @@
-djangorestframework
-markdown
-django-filter
-django-admin
-mysqlclient
-djangorestframework-simplejwt
-python-dotenv
