@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g150287iot+lay$qnc(7)r7l4@7#exii6emmdc&$5yelpk(1d='
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -77,11 +80,11 @@ WSGI_APPLICATION = 'nerdycourses.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nerdy_courses',
+        'NAME': os.getenv("DB_NAME"),
         'HOST': '', #Empty string means to use localhost
-        'PASSWORD': 'hit@22',
+        'PASSWORD': os.getenv("DB_PASSWORD"),
         'PORT': 3306,
-        'USER': 'root',
+        'USER': os.getenv("DB_USER"),
         
     }
 }
