@@ -1,5 +1,7 @@
 from django.db import models
-
+from django.contrib.auth.models import AbstractBaseUser, UserManager
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .managers import CustomUserManager
 
 class OrderStatus(models.TextChoices):
     PENDING = "pending"
@@ -15,13 +17,15 @@ class PaymentStatus(models.TextChoices):
     REFUNDED = "refunded"
     CANCELLED = "cancelled"
 
-class User(models.Model):
+class User(AbstractBaseUser):
     name = models.CharField(max_length=255, null=False)
     email = models.EmailField(max_length=255, null=False, unique=True)
     password = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['password', 'name']
+    objects = CustomUserManager()
         
 
 class Instructor(models.Model):
