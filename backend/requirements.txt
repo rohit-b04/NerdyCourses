@@ -5,3 +5,4 @@ django-admin
 mysqlclient
 djangorestframework-simplejwt
 python-dotenv
+django-cors-headers
