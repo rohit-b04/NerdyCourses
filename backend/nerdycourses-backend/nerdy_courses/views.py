@@ -62,9 +62,19 @@ def search_courses(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def course(request):
-    if not request.user.is_staff:
-        return Response({"detail": "unauthorized"}, status=403)
-    instance = Course.objects.create(course_title=request.data['title'], description=request.data['description'], instructor=request.data['instructor'], price=request.data['price'])
+    if request.user.role != 'instructor':
+        return Response({"message": "You cannot add this course"})
+    instructorId = Instructor.objects.get(user=request.user)
+    # print(type(instructorId))
+    findcourse = Course.objects.filter(course_title=request.data['title'], instructor_id=instructorId).exists()
+    if findcourse == True:
+        raise NameError('Course title already exists')
+    instance = Course.objects.create(
+                    course_title=request.data['title'], 
+                    course_description=request.data['description'], 
+                    instructor_id=instructorId.pk, 
+                    price=request.data['price']
+                )
     instance.save()
     return Response({"message": "Course added successfully"}, status=200)
     

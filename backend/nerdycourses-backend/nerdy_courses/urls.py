@@ -6,6 +6,7 @@ urlpatterns = [
     # path("api/login", views.login),
     path("logout", views.logout),
     path("search-courses", views.search_courses),
+    path("course", views.course),
     path("cart", views.cart),
     path("instructor", views.instructor)
 ]
