@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from nerdy_courses.models import *
-
+from .serializers import CourseSerializer, UserSerializer, CartSerializer
 
 @api_view(['POST'])
 @parser_classes([JSONParser])
@@ -15,12 +15,14 @@ def register(request):
     email = data['email']
     
     email_exists = User.objects.filter(email=email).exists()
-    # print(email_exists)
     if(email_exists != False):
         return Response({"message": "Email already exists"})
+    
     password = data['password']
     u = User.objects.create_user(email=email, name=name, password=password)
-    return Response({"success": "User added successfully", "data": f'{u}'}, status = status.HTTP_200_OK)
+    
+    serializer = UserSerializer(u)
+    return Response({"success": "User added successfully", "data": serializer.data}, status = status.HTTP_200_OK)
 
 @api_view(['DELETE'])
 @parser_classes([JSONParser])
@@ -53,17 +55,19 @@ def instructor(request):
 def search_courses(request):
     course_id = request.GET['course-id']
 
-    result_courses = Course.objects.all().filter(id=course_id).values()
+    result_courses = Course.objects.filter(id=course_id)
+    serializer = CourseSerializer(result_courses, many=True)
+    
     # print(result_courses)
     if(len(result_courses) == 0):
         return Response({"message": "Cannot find the corresponding course"})
-    return Response({"message": "success"})
+    return Response({"data": serializer.data})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def course(request):
     if request.user.role != 'instructor':
-        return Response({"message": "You cannot add this course"})
+        return Response({"message": "Only Instructor can add course"})
     instructorId = Instructor.objects.get(user=request.user)
     # print(type(instructorId))
     findcourse = Course.objects.filter(course_title=request.data['title'], instructor_id=instructorId).exists()
@@ -83,8 +87,29 @@ def course(request):
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
 def cart(request):
+    data = request.data
     u = request.user
-    c = request.course
-    cartData = Cart.objects.create(user=u, course=c)
+    
+    userInstance = User.objects.get(name=data['instructor'])
+    instructor = Instructor.objects.get(user=userInstance).pk
+    course=Course.objects.get(course_title=data['title'], instructor=instructor)
+    
+    cart_instance = Cart.objects.filter(user=u, course=course)
+    if(cart_instance.exists() == True):
+        return Response({"message": "Cart item already added"})
+    
+    cartData = Cart.objects.create(user=u, course=course)
     cartData.save()
-    return Response({"message": "Item added to cart successfully"})
+    return Response({"message": "Item added to cart successfully"}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_cart(request):
+    user = request.user
+    
+    cart_instance = Cart.objects.filter(user=user)
+    serializer = CartSerializer(cart_instance, many=True)
+    
+    # c = Course.objects.get(id=serializer.data.course)
+    # course_serializer = CourseSerializer(c)
+    return Response(serializer.data)
