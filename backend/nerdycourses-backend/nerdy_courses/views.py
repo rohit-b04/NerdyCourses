@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from nerdy_courses.models import *
-from .serializers import CourseSerializer, UserSerializer, CartSerializer
+from .serializers import CourseSerializer, UserSerializer, CartSerializer, SectionSerializer
 
 @api_view(['POST'])
 @parser_classes([JSONParser])
@@ -63,6 +63,12 @@ def search_courses(request):
         return Response({"message": "Cannot find the corresponding course"})
     return Response({"data": serializer.data})
 
+@api_view(['GET'])
+def courses(request):
+    course_instance = Course.objects.all()
+    course_serializer = CourseSerializer(course_instance, many=True)
+    return Response(course_serializer.data)
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def course(request):
@@ -110,6 +116,26 @@ def user_cart(request):
     cart_instance = Cart.objects.filter(user=user)
     serializer = CartSerializer(cart_instance, many=True)
     
-    # c = Course.objects.get(id=serializer.data.course)
-    # course_serializer = CourseSerializer(c)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def section(request):
+    if request.user.role != 'instructor':
+        return Response({"message": "Only Instructor can add section to course"})
+    section_title = request.data['section_title']
+    course = Course.objects.get(course_title=request.data['course_title'])
+    if(Section.objects.filter(section_title=section_title, course=course.pk).exists() == True):
+        return Response({"Message": "Similar section already exists in the course"})
+    section_data = Section.objects.create(section_title=section_title, course=course)
+    
+    return Response({"message": "Section added to course"})
+
+@api_view(['GET'])
+def section_get(request):
+    section = request.GET.get('section-id')
+    course = request.GET.get('course-id')
+    data = Section.objects.filter(id=section, course=course)
+    serializer = SectionSerializer(data, many=True)
+    
     return Response(serializer.data)
