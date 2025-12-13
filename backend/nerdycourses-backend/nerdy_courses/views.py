@@ -24,12 +24,6 @@ def register(request):
     serializer = UserSerializer(u)
     return Response({"success": "User added successfully", "data": serializer.data}, status = status.HTTP_200_OK)
 
-@api_view(['DELETE'])
-@parser_classes([JSONParser])
-def logout(request):
-    #Ending the jwt session 
-    return Response({"success": "Logged out successfully"})
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsAdminUser])
@@ -58,7 +52,6 @@ def search_courses(request):
     result_courses = Course.objects.filter(id=course_id)
     serializer = CourseSerializer(result_courses, many=True)
     
-    # print(result_courses)
     if(len(result_courses) == 0):
         return Response({"message": "Cannot find the corresponding course"})
     return Response({"data": serializer.data})
@@ -75,7 +68,7 @@ def course(request):
     if request.user.role != 'instructor':
         return Response({"message": "Only Instructor can add course"})
     instructorId = Instructor.objects.get(user=request.user)
-    # print(type(instructorId))
+    
     findcourse = Course.objects.filter(course_title=request.data['title'], instructor_id=instructorId).exists()
     if findcourse == True:
         raise NameError('Course title already exists')
@@ -132,10 +125,28 @@ def section(request):
     return Response({"message": "Section added to course"})
 
 @api_view(['GET'])
-def section_get(request):
-    section = request.GET.get('section-id')
-    course = request.GET.get('course-id')
+def section_get(request, course, section):
     data = Section.objects.filter(id=section, course=course)
     serializer = SectionSerializer(data, many=True)
     
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def lecture(request):
+    if(request.user.role != "instructor"):
+        return Response({"message": "Only Instructor can upload the lectures"})
+    data = request.data
+    section = Section.objects.get(section_title=data['section'])
+    if(Lecture.objects.filter(lecture_url=data['lecture_url'], lecture_idx=data['lecture_idx'],
+                              section=section).exists() == True):
+        return Response({"message": "Lecture already uploaded"})
+    
+    
+    lec_instance = Lecture.objects.create(lecture_title=data['lecture_title'],lecture_url=data['lecture_url'], lecture_idx=data['lecture_idx'],
+                              section=section)
+    
+    return Response({"message": "Successfully uploaded"})
+
+# View/watch lectures should only be available to enrolled students/users
+# ...        
